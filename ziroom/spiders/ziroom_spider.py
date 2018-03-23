@@ -8,36 +8,20 @@ class ZiroomSpider(scrapy.Spider):
     name = "ziroom"
 
     start_urls = [
-        'http://sz.ziroom.com/z/nl/z2-r2-d23008674.html?p=1',
+        'http://sz.ziroom.com/z/nl/z2-r5-d23008674.html?p=1',
     ]
 
     def parse(self, response):
-        # get links
+        # get all page links
         for herf in response.css('.txt > h3 > a::attr(href)').extract():
             url = 'http:' + herf
             yield response.follow(url, callback=self.parse_page)
 
-        # get pagination
-        current_page = 1
-        #get_page = response.css('#page > span:nth-child(7)::text').extract_first()
-        #last_page = int(re.search('\d+', get_page).group())
-        if current_page < 2:
-            next_page = 'http://sz.ziroom.com/z/nl/z2-r2-d23008674.html?p=' + str(current_page + 1)
-            yield scrapy.Request(next_page, callback=self.parse)
+        for href in response.css('.next::attr(href)'):
+            yield response.follow(href, self.parse)
+
 
     def parse_page(self, response):
-        # def extract_with_css(query):
-        #     return response.css(query).extract()[1]
-        #
-        # def extract_with_css2(query):
-        #     return response.css(query).extract_first().strip()
-        #
-        # yield {
-        #     'id': extract_with_css('.fb::text'),
-        #     'name': extract_with_css2('.room_name>h2::text')
-        # }
-
-        #http: // sz.ziroom.com / z / vr / 60939857.html
         href_data = response.css('#wechat > img::attr(src)').extract_first()
         href_num = re.search('room\/\d+', href_data).group()[5:]
         href = 'http://sz.ziroom.com/z/vr/'+href_num+'.html'
@@ -69,6 +53,12 @@ class ZiroomSpider(scrapy.Spider):
         roommate = response.css('.greatRoommate > ul li::attr(class)').extract()
         # room_id
         room_id = response.css('.fb::text').extract()[1].strip()
+        # district
+        district = response.css('.node_infor a::text').extract()[1]
+        # street
+        street = response.css('.node_infor a::text').extract()[2]
+        # building
+        building = response.css('.node_infor a::text').extract()[3]
 
         loader = ItemLoader(item=ZiroomItem(), response=response)
         loader.add_value('href', href)
@@ -86,5 +76,9 @@ class ZiroomSpider(scrapy.Spider):
         loader.add_value('traffic_info', traffic_info)
         loader.add_value('roommate', roommate)
         loader.add_value('updatetime', str(datetime.now()))
+        loader.add_value('district', district)
+        loader.add_value('street', street)
+        loader.add_value('building', building)
+
 
         return loader.load_item()

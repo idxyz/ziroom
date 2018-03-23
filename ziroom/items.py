@@ -25,6 +25,9 @@ class ZiroomItem(scrapy.Item):
     traffic_info = scrapy.Field()
     roommate = scrapy.Field()
     updatetime = scrapy.Field()
+    district = scrapy.Field()
+    street = scrapy.Field()
+    building = scrapy.Field()
 
 
     
